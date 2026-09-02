@@ -16,6 +16,7 @@ interface AnswerDetail {
   userAnswer: string;
   correctAnswer: string;
   isCorrect: boolean;
+  manualReview: boolean;
   type: 'choice' | 'text';
 }
 
@@ -26,6 +27,7 @@ interface ResultPayload {
   total: number;
   score: number;
   percentage: number;
+  manualCount: number;
   submissionId: string;
   date: string;
   answers: AnswerDetail[];
@@ -50,8 +52,11 @@ function buildMessage(data: ResultPayload): string {
     lines.push(`🎓 <b>Группа:</b> ${escapeHtml(data.group)}`);
   }
   lines.push(`📝 <b>Тест:</b> ${escapeHtml(data.testTitle)}`);
-  lines.push(`📊 <b>Результат:</b> ${data.score} из ${data.total}`);
+  lines.push(`📊 <b>Результат (автопроверка):</b> ${data.score} из ${data.total}`);
   lines.push(`📈 <b>Процент:</b> ${data.percentage}%`);
+  if (data.manualCount > 0) {
+    lines.push(`✍️ <b>На ручной проверке:</b> ${data.manualCount} вопрос(ов)`);
+  }
   lines.push(`🗓 <b>Дата:</b> ${escapeHtml(data.date)}`);
   lines.push('');
   lines.push('<b>ОТВЕТЫ:</b>');
@@ -60,13 +65,19 @@ function buildMessage(data: ResultPayload): string {
     lines.push('');
     lines.push(`<b>${i + 1}. ${escapeHtml(a.question)}</b>`);
     lines.push(`Ответ участника: ${escapeHtml(a.userAnswer)}`);
-    if (a.type === 'choice') {
-      lines.push(`Правильный ответ: ${escapeHtml(a.correctAnswer)}`);
-    } else if (!a.isCorrect) {
-      // Для открытых вопросов правильный ответ показываем только если ошибка.
-      lines.push(`Правильный ответ: ${escapeHtml(a.correctAnswer)}`);
+    if (a.manualReview) {
+      // Развёрнутый вопрос — показываем образец ответа и помечаем на проверку.
+      lines.push(`Образец ответа: ${escapeHtml(a.correctAnswer)}`);
+      lines.push('Статус: ✍️ На проверке (оценивается вручную)');
+    } else {
+      if (a.type === 'choice') {
+        lines.push(`Правильный ответ: ${escapeHtml(a.correctAnswer)}`);
+      } else if (!a.isCorrect) {
+        // Для коротких открытых вопросов правильный ответ показываем при ошибке.
+        lines.push(`Правильный ответ: ${escapeHtml(a.correctAnswer)}`);
+      }
+      lines.push(`Статус: ${a.isCorrect ? '✅ Правильно' : '❌ Неправильно'}`);
     }
-    lines.push(`Статус: ${a.isCorrect ? '✅ Правильно' : '❌ Неправильно'}`);
   });
 
   lines.push('');

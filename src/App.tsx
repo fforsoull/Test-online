@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { questions } from './data/questions';
-import type { Participant, TestResult } from './types';
+import type { Participant, TestResult, Test } from './types';
 import { buildResult } from './lib/checkAnswers';
 import Home from './components/Home';
+import TestSelect from './components/TestSelect';
 import StartForm from './components/StartForm';
 import ProgressBar from './components/ProgressBar';
 import QuestionCard from './components/QuestionCard';
@@ -11,10 +11,11 @@ import Result, { type SendStatus } from './components/Result';
 import Footer from './components/Footer';
 
 // Экраны приложения.
-type Screen = 'home' | 'start' | 'quiz' | 'result';
+type Screen = 'home' | 'select' | 'start' | 'quiz' | 'result';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home');
+  const [selectedTest, setSelectedTest] = useState<Test | null>(null);
   const [participant, setParticipant] = useState<Participant>({ name: '', group: '' });
 
   // Ответы: ключ — id вопроса, значение — ответ пользователя.
@@ -27,17 +28,24 @@ export default function App() {
   const [result, setResult] = useState<TestResult | null>(null);
   const [sendStatus, setSendStatus] = useState<SendStatus>('sending');
 
+  const questions = selectedTest?.questions ?? [];
   const currentQuestion = questions[currentIndex];
   const isLast = currentIndex === questions.length - 1;
 
   // Есть ли ответ на текущий вопрос (для блокировки кнопки «Далее»).
   const currentAnswered =
-    currentQuestion &&
-    (answers[currentQuestion.id] ?? '').trim() !== '';
+    !!currentQuestion && (answers[currentQuestion.id] ?? '').trim() !== '';
 
   // --- Переходы между экранами ---
 
-  const handleStartTest = () => setScreen('start');
+  const handleStart = () => setScreen('select');
+
+  const handleSelectTest = (test: Test) => {
+    setSelectedTest(test);
+    setAnswers({});
+    setCurrentIndex(0);
+    setScreen('start');
+  };
 
   const handleParticipantSubmit = (p: Participant) => {
     setParticipant(p);
@@ -47,6 +55,7 @@ export default function App() {
   };
 
   const handleAnswerChange = (value: string) => {
+    if (!currentQuestion) return;
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
   };
 
@@ -85,10 +94,10 @@ export default function App() {
 
   // Подтверждение завершения теста (защита от двойного нажатия — submitting).
   const handleConfirmFinish = async () => {
-    if (submitting) return;
+    if (submitting || !selectedTest) return;
     setSubmitting(true);
 
-    const computed = buildResult(questions, answers, participant);
+    const computed = buildResult(selectedTest, answers, participant);
     setResult(computed);
     setShowConfirm(false);
     setScreen('result');
@@ -102,6 +111,7 @@ export default function App() {
   };
 
   const handleRestart = () => {
+    setSelectedTest(null);
     setParticipant({ name: '', group: '' });
     setAnswers({});
     setCurrentIndex(0);
@@ -115,10 +125,17 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-8 sm:py-12">
-        {screen === 'home' && <Home onStart={handleStartTest} />}
+        {screen === 'home' && <Home onStart={handleStart} />}
+
+        {screen === 'select' && (
+          <TestSelect onSelect={handleSelectTest} onBack={() => setScreen('home')} />
+        )}
 
         {screen === 'start' && (
-          <StartForm onSubmit={handleParticipantSubmit} onBack={() => setScreen('home')} />
+          <StartForm
+            onSubmit={handleParticipantSubmit}
+            onBack={() => setScreen('select')}
+          />
         )}
 
         {screen === 'quiz' && currentQuestion && (

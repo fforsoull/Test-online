@@ -1,4 +1,4 @@
-import { TEST_TITLE } from '../data/questions';
+import { SITE_TITLE } from '../data/questions';
 
 interface Props {
   onStart: () => void;
@@ -25,7 +25,7 @@ export default function Home({ onStart }: Props) {
       </div>
 
       <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-        {TEST_TITLE}
+        {SITE_TITLE}
       </h1>
       <p className="mt-3 max-w-md text-base text-slate-500">
         Ответьте на вопросы и узнайте свой результат

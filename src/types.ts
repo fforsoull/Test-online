@@ -15,9 +15,21 @@ export interface TextQuestion {
   type: 'text';
   question: string;
   correctAnswers: string[];
+  // Если true — ответ проверяется преподавателем вручную (длинный/развёрнутый).
+  // Такой вопрос НЕ влияет на автоматический балл, но ответ участника и
+  // образец правильного ответа отправляются в Telegram.
+  manualReview?: boolean;
 }
 
 export type Question = ChoiceQuestion | TextQuestion;
+
+// Один тест (у сайта их может быть несколько).
+export interface Test {
+  id: string;
+  title: string;
+  description?: string;
+  questions: Question[];
+}
 
 // Данные участника, которые он вводит перед началом теста.
 export interface Participant {
@@ -31,6 +43,7 @@ export interface AnswerDetail {
   userAnswer: string;
   correctAnswer: string;
   isCorrect: boolean;
+  manualReview: boolean;
   type: Question['type'];
 }
 
@@ -39,9 +52,10 @@ export interface TestResult {
   name: string;
   group: string;
   testTitle: string;
-  total: number;
-  score: number;
-  percentage: number;
+  total: number; // сколько вопросов проверяется автоматически
+  score: number; // сколько из них правильных
+  percentage: number; // процент по автоматически проверяемым
+  manualCount: number; // сколько вопросов на ручной проверке
   submissionId: string;
   date: string;
   answers: AnswerDetail[];

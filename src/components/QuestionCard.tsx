@@ -7,12 +7,14 @@ interface Props {
 }
 
 export default function QuestionCard({ question, answer, onChange }: Props) {
+  const manual = question.type === 'text' && question.manualReview === true;
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
       <span className="text-xs font-semibold uppercase tracking-wide text-brand-600">
         Вопрос
       </span>
-      <h2 className="mt-2 text-xl font-semibold leading-snug text-slate-900 sm:text-2xl">
+      <h2 className="mt-2 whitespace-pre-line text-xl font-semibold leading-snug text-slate-900 sm:text-2xl">
         {question.question}
       </h2>
 
@@ -44,7 +46,7 @@ export default function QuestionCard({ question, answer, onChange }: Props) {
                   onChange={() => onChange(option)}
                   className="sr-only"
                 />
-                <span className="text-base text-slate-800">{option}</span>
+                <span className="whitespace-pre-line text-base text-slate-800">{option}</span>
               </label>
             );
           })}
@@ -58,6 +60,11 @@ export default function QuestionCard({ question, answer, onChange }: Props) {
             rows={5}
             className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-base outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
           />
+          {manual && (
+            <p className="mt-2 text-sm text-slate-400">
+              Это развёрнутый вопрос — ваш ответ проверит преподаватель.
+            </p>
+          )}
         </div>
       )}
     </div>

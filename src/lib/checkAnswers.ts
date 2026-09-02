@@ -1,5 +1,4 @@
-import type { Question, AnswerDetail, Participant, TestResult } from '../types';
-import { TEST_TITLE } from '../data/questions';
+import type { Question, AnswerDetail, Participant, TestResult, Test } from '../types';
 
 // Нормализация текста для сравнения открытых ответов:
 // - убираем пробелы по краям;
@@ -33,6 +32,11 @@ function correctAnswerText(question: Question): string {
   return question.correctAnswers.join(' / ');
 }
 
+// Нужен ли вопросу ручной разбор (развёрнутый открытый ответ).
+function isManual(question: Question): boolean {
+  return question.type === 'text' && question.manualReview === true;
+}
+
 // Генерация короткого ID прохождения (8 символов).
 function makeSubmissionId(): string {
   return Math.random().toString(36).slice(2, 10).toUpperCase();
@@ -48,33 +52,40 @@ function formatDate(d: Date): string {
 
 // Считает полный результат прохождения теста.
 export function buildResult(
-  questions: Question[],
+  test: Test,
   answers: Record<number, string>,
   participant: Participant
 ): TestResult {
-  const details: AnswerDetail[] = questions.map((q) => {
+  const details: AnswerDetail[] = test.questions.map((q) => {
     const userAnswer = answers[q.id] ?? '';
-    const correct = isAnswerCorrect(q, userAnswer);
+    const manual = isManual(q);
+    // Вопросы на ручной проверке не считаем правильными/неправильными автоматически.
+    const correct = manual ? false : isAnswerCorrect(q, userAnswer);
     return {
       question: q.question,
       userAnswer: userAnswer.trim() === '' ? '(нет ответа)' : userAnswer.trim(),
       correctAnswer: correctAnswerText(q),
       isCorrect: correct,
+      manualReview: manual,
       type: q.type,
     };
   });
 
-  const total = questions.length;
-  const score = details.filter((d) => d.isCorrect).length;
+  // Автоматический балл считаем только по автоматически проверяемым вопросам.
+  const autoChecked = details.filter((d) => !d.manualReview);
+  const total = autoChecked.length;
+  const score = autoChecked.filter((d) => d.isCorrect).length;
   const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+  const manualCount = details.length - autoChecked.length;
 
   return {
     name: participant.name.trim(),
     group: participant.group.trim(),
-    testTitle: TEST_TITLE,
+    testTitle: test.title,
     total,
     score,
     percentage,
+    manualCount,
     submissionId: makeSubmissionId(),
     date: formatDate(new Date()),
     answers: details,

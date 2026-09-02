@@ -28,13 +28,14 @@ export default function Result({ result, sendStatus, onRetry, onRestart }: Props
       </div>
 
       <h2 className="text-2xl font-bold text-slate-900">Тест завершён</h2>
-      <p className="mt-1 text-sm text-slate-500">Ваш результат</p>
+      <p className="mt-1 text-sm text-slate-500">{result.testTitle}</p>
 
       <div className="mt-6">
         <div className="text-5xl font-bold text-brand-600">
           {result.score} / {result.total}
         </div>
         <div className="mt-1 text-2xl font-semibold text-slate-700">{result.percentage}%</div>
+        <p className="mt-2 text-xs text-slate-400">по автоматически проверяемым вопросам</p>
       </div>
 
       <div className="mt-6 grid grid-cols-3 gap-3 text-center">
@@ -51,6 +52,14 @@ export default function Result({ result, sendStatus, onRetry, onRestart }: Props
           <div className="text-xs text-slate-500">Неправильных</div>
         </div>
       </div>
+
+      {result.manualCount > 0 && (
+        <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-700">
+          Ещё {result.manualCount}{' '}
+          {result.manualCount === 1 ? 'вопрос' : 'вопрос(ов)'} с развёрнутым ответом —
+          их проверит преподаватель.
+        </p>
+      )}
 
       {/* Статус отправки результата в Telegram */}
       <div className="mt-6">
